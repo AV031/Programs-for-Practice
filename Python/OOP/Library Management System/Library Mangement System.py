@@ -1,140 +1,324 @@
-class Student:
-    def __init__(self, student_id, name):
-        self.student_id = student_id
-        self.name = name
-        self.borrowed_books = []
-
-    def borrow_book(self, book):
-        if book.is_available:
-            book.borrow()
-            self.borrowed_books.append(book)
-            print(f"\n{self.name} borrowed '{book.title}'.")
-        else:
-            print(f"\n'{book.title}' is already borrowed.")
-
-    def return_book(self, book):
-        if book in self.borrowed_books:
-            book.return_book()
-            self.borrowed_books.remove(book)
-            print(f"\n{self.name} returned '{book.title}'.")
-        else:
-            print(f"\n{self.name} has not borrowed '{book.title}'.")
-
-    def view_books(self):
-        print(f"\nBooks borrowed by {self.name}:")
-
-        if not self.borrowed_books:
-            print("No books borrowed.")
-        else:
-            for book in self.borrowed_books:
-                print(f"- {book.title}")
+import sqlite3
 
 
-class Book:
-    def __init__(self, book_id, title, author):
-        self.book_id = book_id
-        self.title = title
-        self.author = author
-        self.is_available = True
+# ==========================================
+# DATABASE CLASS
+# ==========================================
 
-    def borrow(self):
-        self.is_available = False
+class Database:
 
-    def return_book(self):
-        self.is_available = True
+    def __init__(self, db_name="library.db"):
+        self.connection = sqlite3.connect(db_name)
+        self.cursor = self.connection.cursor()
+        self.create_tables()
 
-    def display_info(self):
-        status = "Available" if self.is_available else "Borrowed"
-        print(
-            f"ID: {self.book_id} | "
-            f"Title: {self.title} | "
-            f"Author: {self.author} | "
-            f"Status: {status}"
-        )
+    def create_tables(self):
 
+        # Students table
+        self.cursor.execute("""
+            CREATE TABLE IF NOT EXISTS students (
+                student_id INTEGER PRIMARY KEY,
+                name TEXT NOT NULL
+            )
+        """)
 
-class Library:
-    def __init__(self, name):
-        self.name = name
-        self.books = []
-        self.students = []
+        # Books table
+        self.cursor.execute("""
+            CREATE TABLE IF NOT EXISTS books (
+                book_id INTEGER PRIMARY KEY,
+                title TEXT NOT NULL,
+                author TEXT NOT NULL,
+                is_available INTEGER DEFAULT 1
+            )
+        """)
 
-    def add_book(self, book):
-        self.books.append(book)
-        print(f"\nBook '{book.title}' added successfully.")
+        # Borrowed books table
+        self.cursor.execute("""
+            CREATE TABLE IF NOT EXISTS borrowed_books (
+                student_id INTEGER,
+                book_id INTEGER,
 
-    def add_student(self, student):
-        self.students.append(student)
-        print(f"\nStudent '{student.name}' added successfully.")
+                FOREIGN KEY (student_id)
+                    REFERENCES students(student_id),
 
-    def find_book(self, book_id):
-        for book in self.books:
-            if book.book_id == book_id:
-                return book
-        return None
+                FOREIGN KEY (book_id)
+                    REFERENCES books(book_id),
+
+                PRIMARY KEY (student_id, book_id)
+            )
+        """)
+
+        self.connection.commit()
+
+    # ==========================================
+    # STUDENT OPERATIONS
+    # ==========================================
+
+    def add_student(self, student_id, name):
+
+        try:
+            self.cursor.execute("""
+                INSERT INTO students (student_id, name)
+                VALUES (?, ?)
+            """, (student_id, name))
+
+            self.connection.commit()
+
+            print(f"\nStudent '{name}' added successfully.")
+
+        except sqlite3.IntegrityError:
+            print("\nStudent ID already exists.")
 
     def find_student(self, student_id):
-        for student in self.students:
-            if student.student_id == student_id:
-                return student
-        return None
 
-    def issue_book(self, student_id, book_id):
-        student = self.find_student(student_id)
-        book = self.find_book(book_id)
+        self.cursor.execute("""
+            SELECT student_id, name
+            FROM students
+            WHERE student_id = ?
+        """, (student_id,))
 
-        if student is None:
-            print("\nStudent not found.")
-            return
-
-        if book is None:
-            print("\nBook not found.")
-            return
-
-        student.borrow_book(book)
-
-    def return_book(self, student_id, book_id):
-        student = self.find_student(student_id)
-        book = self.find_book(book_id)
-
-        if student is None:
-            print("\nStudent not found.")
-            return
-
-        if book is None:
-            print("\nBook not found.")
-            return
-
-        student.return_book(book)
-
-    def display_books(self):
-        print("\n========== ALL BOOKS ==========")
-
-        if not self.books:
-            print("No books available.")
-        else:
-            for book in self.books:
-                book.display_info()
+        return self.cursor.fetchone()
 
     def display_students(self):
+
+        self.cursor.execute("""
+            SELECT student_id, name
+            FROM students
+            ORDER BY student_id
+        """)
+
+        students = self.cursor.fetchall()
+
         print("\n========== ALL STUDENTS ==========")
 
-        if not self.students:
+        if not students:
             print("No students registered.")
+
         else:
-            for student in self.students:
+            for student_id, name in students:
+
+                self.cursor.execute("""
+                    SELECT COUNT(*)
+                    FROM borrowed_books
+                    WHERE student_id = ?
+                """, (student_id,))
+
+                count = self.cursor.fetchone()[0]
+
                 print(
-                    f"ID: {student.student_id} | "
-                    f"Name: {student.name} | "
-                    f"Books Borrowed: {len(student.borrowed_books)}"
+                    f"ID: {student_id} | "
+                    f"Name: {name} | "
+                    f"Books Borrowed: {count}"
                 )
+
+    # ==========================================
+    # BOOK OPERATIONS
+    # ==========================================
+
+    def add_book(self, book_id, title, author):
+
+        try:
+            self.cursor.execute("""
+                INSERT INTO books
+                (book_id, title, author, is_available)
+                VALUES (?, ?, ?, 1)
+            """, (book_id, title, author))
+
+            self.connection.commit()
+
+            print(f"\nBook '{title}' added successfully.")
+
+        except sqlite3.IntegrityError:
+            print("\nBook ID already exists.")
+
+    def find_book(self, book_id):
+
+        self.cursor.execute("""
+            SELECT book_id, title, author, is_available
+            FROM books
+            WHERE book_id = ?
+        """, (book_id,))
+
+        return self.cursor.fetchone()
+
+    def display_books(self):
+
+        self.cursor.execute("""
+            SELECT book_id, title, author, is_available
+            FROM books
+            ORDER BY book_id
+        """)
+
+        books = self.cursor.fetchall()
+
+        print("\n========== ALL BOOKS ==========")
+
+        if not books:
+            print("No books available.")
+
+        else:
+            for book_id, title, author, is_available in books:
+
+                status = "Available" if is_available else "Borrowed"
+
+                print(
+                    f"ID: {book_id} | "
+                    f"Title: {title} | "
+                    f"Author: {author} | "
+                    f"Status: {status}"
+                )
+
+    # ==========================================
+    # ISSUE BOOK
+    # ==========================================
+
+    def issue_book(self, student_id, book_id):
+
+        # Check student
+        student = self.find_student(student_id)
+
+        if student is None:
+            print("\nStudent not found.")
+            return
+
+        # Check book
+        book = self.find_book(book_id)
+
+        if book is None:
+            print("\nBook not found.")
+            return
+
+        book_id, title, author, is_available = book
+
+        # Check availability
+        if not is_available:
+            print(f"\n'{title}' is already borrowed.")
+            return
+
+        # Insert borrowing record
+        self.cursor.execute("""
+            INSERT INTO borrowed_books
+            (student_id, book_id)
+            VALUES (?, ?)
+        """, (student_id, book_id))
+
+        # Update book availability
+        self.cursor.execute("""
+            UPDATE books
+            SET is_available = 0
+            WHERE book_id = ?
+        """, (book_id,))
+
+        self.connection.commit()
+
+        print(f"\n{student[1]} borrowed '{title}'.")
+
+    # ==========================================
+    # RETURN BOOK
+    # ==========================================
+
+    def return_book(self, student_id, book_id):
+
+        # Check student
+        student = self.find_student(student_id)
+
+        if student is None:
+            print("\nStudent not found.")
+            return
+
+        # Check book
+        book = self.find_book(book_id)
+
+        if book is None:
+            print("\nBook not found.")
+            return
+
+        # Check whether student borrowed the book
+        self.cursor.execute("""
+            SELECT *
+            FROM borrowed_books
+            WHERE student_id = ?
+            AND book_id = ?
+        """, (student_id, book_id))
+
+        borrowed = self.cursor.fetchone()
+
+        if borrowed is None:
+            print(
+                f"\n{student[1]} has not borrowed "
+                f"'{book[1]}'."
+            )
+            return
+
+        # Delete borrowing record
+        self.cursor.execute("""
+            DELETE FROM borrowed_books
+            WHERE student_id = ?
+            AND book_id = ?
+        """, (student_id, book_id))
+
+        # Make book available again
+        self.cursor.execute("""
+            UPDATE books
+            SET is_available = 1
+            WHERE book_id = ?
+        """, (book_id,))
+
+        self.connection.commit()
+
+        print(f"\n{student[1]} returned '{book[1]}'.")
+
+    # ==========================================
+    # VIEW STUDENT'S BOOKS
+    # ==========================================
+
+    def view_student_books(self, student_id):
+
+        student = self.find_student(student_id)
+
+        if student is None:
+            print("\nStudent not found.")
+            return
+
+        print(f"\nBooks borrowed by {student[1]}:")
+
+        self.cursor.execute("""
+            SELECT
+                b.book_id,
+                b.title,
+                b.author
+            FROM books b
+            JOIN borrowed_books bb
+                ON b.book_id = bb.book_id
+            WHERE bb.student_id = ?
+        """, (student_id,))
+
+        books = self.cursor.fetchall()
+
+        if not books:
+            print("No books borrowed.")
+
+        else:
+            for book_id, title, author in books:
+                print(
+                    f"- ID: {book_id} | "
+                    f"Title: {title} | "
+                    f"Author: {author}"
+                )
+
+    # ==========================================
+    # CLOSE DATABASE
+    # ==========================================
+
+    def close(self):
+        self.connection.close()
 
 
 # ==========================================
 # MAIN PROGRAM
 # ==========================================
 
-library = Library("Central Library")
+database = Database()
 
 while True:
 
@@ -154,68 +338,112 @@ while True:
 
     choice = input("Enter your choice: ")
 
-    # Add Student
+    # ==========================================
+    # ADD STUDENT
+    # ==========================================
+
     if choice == "1":
 
-        student_id = int(input("Enter Student ID: "))
-        name = input("Enter Student Name: ")
+        try:
+            student_id = int(input("Enter Student ID: "))
+            name = input("Enter Student Name: ")
 
-        student = Student(student_id, name)
-        library.add_student(student)
+            database.add_student(student_id, name)
 
-    # Add Book
+        except ValueError:
+            print("\nStudent ID must be a number.")
+
+    # ==========================================
+    # ADD BOOK
+    # ==========================================
+
     elif choice == "2":
 
-        book_id = int(input("Enter Book ID: "))
-        title = input("Enter Book Title: ")
-        author = input("Enter Author Name: ")
+        try:
+            book_id = int(input("Enter Book ID: "))
+            title = input("Enter Book Title: ")
+            author = input("Enter Author Name: ")
 
-        book = Book(book_id, title, author)
-        library.add_book(book)
+            database.add_book(book_id, title, author)
 
-    # Display Books
+        except ValueError:
+            print("\nBook ID must be a number.")
+
+    # ==========================================
+    # DISPLAY BOOKS
+    # ==========================================
+
     elif choice == "3":
 
-        library.display_books()
+        database.display_books()
 
-    # Display Students
+    # ==========================================
+    # DISPLAY STUDENTS
+    # ==========================================
+
     elif choice == "4":
 
-        library.display_students()
+        database.display_students()
 
-    # Issue Book
+    # ==========================================
+    # ISSUE BOOK
+    # ==========================================
+
     elif choice == "5":
 
-        student_id = int(input("Enter Student ID: "))
-        book_id = int(input("Enter Book ID: "))
+        try:
+            student_id = int(input("Enter Student ID: "))
+            book_id = int(input("Enter Book ID: "))
 
-        library.issue_book(student_id, book_id)
+            database.issue_book(student_id, book_id)
 
-    # Return Book
+        except ValueError:
+            print("\nIDs must be numbers.")
+
+    # ==========================================
+    # RETURN BOOK
+    # ==========================================
+
     elif choice == "6":
 
-        student_id = int(input("Enter Student ID: "))
-        book_id = int(input("Enter Book ID: "))
+        try:
+            student_id = int(input("Enter Student ID: "))
+            book_id = int(input("Enter Book ID: "))
 
-        library.return_book(student_id, book_id)
+            database.return_book(student_id, book_id)
 
-    # View Student's Books
+        except ValueError:
+            print("\nIDs must be numbers.")
+
+    # ==========================================
+    # VIEW STUDENT'S BOOKS
+    # ==========================================
+
     elif choice == "7":
 
-        student_id = int(input("Enter Student ID: "))
+        try:
+            student_id = int(input("Enter Student ID: "))
 
-        student = library.find_student(student_id)
+            database.view_student_books(student_id)
 
-        if student:
-            student.view_books()
-        else:
-            print("\nStudent not found.")
+        except ValueError:
+            print("\nStudent ID must be a number.")
 
-    # Exit
+    # ==========================================
+    # EXIT
+    # ==========================================
+
     elif choice == "8":
 
-        print("\nThank you for using the Library Management System!")
+        database.close()
+
+        print(
+            "\nThank you for using the "
+            "Library Management System!"
+        )
+
         break
 
     else:
+
         print("\nInvalid choice. Please try again.")
