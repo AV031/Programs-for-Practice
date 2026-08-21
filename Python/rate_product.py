@@ -3,9 +3,6 @@
 
 import re
 
-# ---------------------------------------------------
-# Step 1: User Comments
-# ---------------------------------------------------
 
 comments = [
     "Don't buy! Bad product",
@@ -15,9 +12,9 @@ comments = [
     "It's a good buy but one time"
 ]
 
-# ---------------------------------------------------
+
 # Step 2: Sentiment Words
-# ---------------------------------------------------
+
 
 positive_words = {
     "good": 1,
@@ -44,10 +41,7 @@ negative_words = {
     "useless": 4
 }
 
-
-# ---------------------------------------------------
 # Step 3: Text Preprocessing
-# ---------------------------------------------------
 
 def preprocess(text):
     text = text.lower()
@@ -56,9 +50,7 @@ def preprocess(text):
     return words
 
 
-# ---------------------------------------------------
 # Step 4: Calculate Sentiment
-# ---------------------------------------------------
 
 def calculate_rating(comment):
 
@@ -117,9 +109,7 @@ def calculate_rating(comment):
     return rating, sentiment
 
 
-# ---------------------------------------------------
 # Step 5: Analyze All Comments
-# ---------------------------------------------------
 
 total_rating = 0
 
@@ -138,9 +128,7 @@ for i, comment in enumerate(comments, start=1):
     print("Rating    :", rating, "/ 5")
 
 
-# ---------------------------------------------------
 # Step 6: Calculate Overall Product Rating
-# ---------------------------------------------------
 
 overall_rating = total_rating / len(comments)
 
