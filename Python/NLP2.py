@@ -47,4 +47,3 @@ elif negative_count > positive_count:
     print("Overall Sentiment: Negative")
 else:
     print("Overall Sentiment: Neutral")
-    
