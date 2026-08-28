@@ -1,8 +1,6 @@
-# Sentiment Analysis using Basic NLP
-
 import re
 
-# Input paragraph
+#paragraph
 text = """I really enjoyed using this application. The interface is simple,
 attractive, and easy to understand. The features work smoothly, and the
 response time is excellent. I am very happy with the overall experience and
