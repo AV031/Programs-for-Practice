@@ -1,6 +1,5 @@
 # NLP Assignment 4
-# Sentence Tokenization, Word Tokenization,
-# Stop Word Removal and Sentiment Analysis
+#Paragraph Tokenization, Word Tokenization, Stop Word Removal and Sentiment Analysis
 
 import nltk
 from nltk.tokenize import sent_tokenize, word_tokenize
