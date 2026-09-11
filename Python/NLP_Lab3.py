@@ -1,10 +1,7 @@
-# NLP Assignment
-# Spam Detection using Rule Based Approach
+# Assignment Question 3
+# Spam Detection using NLP - Rule Based Approach
 
 import re
-
-# Given mail
-mail = "You have won an lottery of 20000$! Hurray! Click the link below to claim now."
 
 # Priority dictionary
 priority_dict = {
@@ -17,6 +14,7 @@ priority_dict = {
     "click": "low",
     "link": "low",
     "win": "medium",
+    "won": "medium",
     "below": "medium",
     "now": "medium"
 }
@@ -27,78 +25,82 @@ stop_words = {
     "of", "to", "in", "on", "for", "and"
 }
 
-print("Original Mail:")
-print(mail)
+# Accept 5 sentences from the user
+sentences = []
 
-# 1. Lowercase
-mail = mail.lower()
+print("Enter 5 sentences:")
 
-print("\n1. Lowercase:")
-print(mail)
+for i in range(5):
+    sentence = input(f"Sentence {i + 1}: ")
+    sentences.append(sentence)
 
-# 2. Tokenization
-tokens = re.findall(r'\b[a-z]+\b', mail)
 
-print("\n2. Tokens:")
-print(tokens)
+# Function to check spam
+def check_spam(sentence):
 
-# 3. Stop Word Removal
-filtered_tokens = []
+    # Convert to lowercase
+    sentence = sentence.lower()
 
-for word in tokens:
-    if word not in stop_words:
-        filtered_tokens.append(word)
+    # Word tokenization
+    tokens = re.findall(r'\b[a-z]+\b', sentence)
 
-print("\n3. After Stop Word Removal:")
-print(filtered_tokens)
+    # Stop word removal
+    filtered_tokens = []
 
-# 4. Lemmatization
-lemma_dictionary = {
-    "won": "win"
-}
+    for word in tokens:
+        if word not in stop_words:
+            filtered_tokens.append(word)
 
-lemmatized_tokens = []
+    # Lemmatization
+    lemma_dictionary = {
+        "won": "win"
+    }
 
-for word in filtered_tokens:
-    if word in lemma_dictionary:
-        lemmatized_tokens.append(lemma_dictionary[word])
+    lemmatized_tokens = []
+
+    for word in filtered_tokens:
+        if word in lemma_dictionary:
+            lemmatized_tokens.append(lemma_dictionary[word])
+        else:
+            lemmatized_tokens.append(word)
+
+    # Priority analysis
+    high_count = 0
+    medium_count = 0
+    low_count = 0
+
+    for word in lemmatized_tokens:
+
+        if word in priority_dict:
+
+            priority = priority_dict[word]
+
+            if priority == "high":
+                high_count += 1
+
+            elif priority == "medium":
+                medium_count += 1
+
+            elif priority == "low":
+                low_count += 1
+
+    # Spam classification
+    if high_count >= 2 and medium_count >= 1:
+        return "Spam"
     else:
-        lemmatized_tokens.append(word)
+        return "Not Spam"
 
-print("\n4. After Lemmatization:")
-print(lemmatized_tokens)
 
-# 5. Priority Analysis
-high_count = 0
-medium_count = 0
-low_count = 0
+# Display results
+print("\n" + "=" * 50)
+print("          SPAM DETECTION RESULTS")
+print("=" * 50)
 
-print("\n5. Analysis:")
+for i, sentence in enumerate(sentences, 1):
 
-for word in lemmatized_tokens:
+    result = check_spam(sentence)
 
-    if word in priority_dict:
+    print("\nSentence", i, ":", sentence)
+    print("Result :", result)
 
-        priority = priority_dict[word]
-
-        print(word, "->", priority)
-
-        if priority == "high":
-            high_count += 1
-
-        elif priority == "medium":
-            medium_count += 1
-
-        elif priority == "low":
-            low_count += 1
-
-print("\nPriority Counts:")
-print("High   =", high_count)
-print("Medium =", medium_count)
-print("Low    =", low_count)
-
-# Final Spam Classification
-if high_count >= 2 and medium_count >= 1:
-    print("\nFinal Result: Spam")
-else:
-    print("\nFinal Result: Not a Spam")
+print("\n" + "=" * 50)
