@@ -1,118 +1,43 @@
-#Q) Take a sentence , use Top-Down Parsing Technique , Generate individual tokens ('Tree Structure')
-
-
-sentence = "the boy eats the apple"
-
-
-tokens = sentence.split()
-position = 0
-
-
-
+# Assignment 6 
+#Q) Take a sentence, use top down parsing technique, generate indvidual tokens (Tree Structure)
 class Node:
-    def __init__(self, name, children=None):
+    def __init__(self, name):
         self.name = name
-        self.children = children if children else []
+        self.children = []
+
+    def add_child(self, child):
+        self.children.append(child)
+
+    def display(self, level=0):
+        print("  " * level + self.name)
+        for child in self.children:
+            child.display(level + 1)
 
 
-# Grammar:
-# S  -> NP VP
-# NP -> Det N
-# VP -> V NP
-# Det -> the
-# N -> boy | apple
-# V -> eats
+# Take sentence from user
+sentence = input("Enter a sentence: ")
 
+# Split sentence into words
+tokens = sentence.split()
 
-def match(word):
-    global position
+# Create root node
+root = Node("S")
 
-    if position < len(tokens) and tokens[position] == word:
-        position += 1
-        return Node(word)
+# Create NP for first part
+np = Node("NP")
 
-    return None
+# Add words to NP
+for word in tokens[:-1]:
+    np.add_child(Node(word))
 
+# Create VP for last word
+vp = Node("VP")
+vp.add_child(Node(tokens[-1]))
 
-def parse_det():
-    if position < len(tokens) and tokens[position] == "the":
-        return Node("Det", [match("the")])
+# Add NP and VP to root
+root.add_child(np)
+root.add_child(vp)
 
-    return None
-
-
-def parse_noun():
-    global position
-
-    if position < len(tokens) and tokens[position] in ["boy", "apple"]:
-        word = tokens[position]
-        position += 1
-        return Node("N", [Node(word)])
-
-    return None
-
-
-def parse_verb():
-    if position < len(tokens) and tokens[position] == "eats":
-        return Node("V", [match("eats")])
-
-    return None
-
-
-def parse_np():
-    det = parse_det()
-    if det is None:
-        return None
-
-    noun = parse_noun()
-    if noun is None:
-        return None
-
-    return Node("NP", [det, noun])
-
-
-def parse_vp():
-    verb = parse_verb()
-    if verb is None:
-        return None
-
-    np = parse_np()
-    if np is None:
-        return None
-
-    return Node("VP", [verb, np])
-
-
-def parse_sentence():
-    np = parse_np()
-    if np is None:
-        return None
-
-    vp = parse_vp()
-    if vp is None:
-        return None
-
-    return Node("S", [np, vp])
-
-
-def print_tree(node, level=0):
-    print("  " * level + "|-- " + node.name)
-
-    for child in node.children:
-        print_tree(child, level + 1)
-
-
-
-tree = parse_sentence()
-
-if tree is not None and position == len(tokens):
-    print("Tokens:")
-    print(tokens)
-
-    print("\nParse Tree:")
-    print_tree(tree)
-
-    print("\nSentence successfully parsed using Top-Down Parsing.")
-
-else:
-    print("Invalid sentence!")
+# Display tree
+print("\nParse Tree:")
+root.display()
