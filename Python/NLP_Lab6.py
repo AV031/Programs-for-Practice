@@ -1,15 +1,14 @@
 #Q) Take a sentence , use Top-Down Parsing Technique , Generate individual tokens ('Tree Structure')
 
-# Top-Down Parsing using Recursive Descent Parser
 
 sentence = "the boy eats the apple"
 
-# Convert sentence into individual tokens
+
 tokens = sentence.split()
 position = 0
 
 
-# Node for the parse tree
+
 class Node:
     def __init__(self, name, children=None):
         self.name = name
@@ -96,7 +95,6 @@ def parse_sentence():
     return Node("S", [np, vp])
 
 
-# Print the tree
 def print_tree(node, level=0):
     print("  " * level + "|-- " + node.name)
 
@@ -104,7 +102,7 @@ def print_tree(node, level=0):
         print_tree(child, level + 1)
 
 
-# Start parsing
+
 tree = parse_sentence()
 
 if tree is not None and position == len(tokens):
