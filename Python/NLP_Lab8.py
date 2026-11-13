@@ -1,4 +1,3 @@
-
 import nltk
 import re
 from nltk import CFG, ChartParser, BottomUpChartParser
