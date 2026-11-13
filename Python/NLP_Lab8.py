@@ -1,9 +1,7 @@
-# Assignment 8 NLP
-# Implementation of a Natural Language Processing (NLP) Program to Generate Parse Trees for English Sentences Using Context-Free Grammar (CFG) in Python.
 
 import nltk
 import re
-from nltk import CFG, ChartParser
+from nltk import CFG, ChartParser, BottomUpChartParser
 
 # Define grammar
 grammar = CFG.fromstring("""
@@ -30,7 +28,9 @@ V -> 'worshipped'
 PREP -> 'in' | 'across' | 'as'
 """)
 
-parser = ChartParser(grammar)
+# Create parsers
+top_down_parser = ChartParser(grammar)
+bottom_up_parser = BottomUpChartParser(grammar)
 
 
 def generate_parse_tree(sentence):
@@ -38,19 +38,36 @@ def generate_parse_tree(sentence):
 
     print("\nSentence:", sentence)
 
+    # TOP-DOWN PARSING
+    print("\n--- TOP-DOWN PARSING ---")
+
     try:
-        trees = parser.parse(words)
+        trees = top_down_parser.parse(words)
         tree = next(trees)
 
-        print("Parse Tree:")
+        print("Top-Down Parse Tree:")
         tree.pretty_print()
 
     except StopIteration:
-        print("No parse tree found for this sentence.")
+        print("No Top-Down parse tree found.")
+
+    # BOTTOM-UP PARSING
+    print("\n--- BOTTOM-UP PARSING ---")
+
+    try:
+        trees = bottom_up_parser.parse(words)
+        tree = next(trees)
+
+        print("Bottom-Up Parse Tree:")
+        tree.pretty_print()
+
+    except StopIteration:
+        print("No Bottom-Up parse tree found.")
 
 
 # Main program
 print("NLP PARSE TREE GENERATOR")
+print("Top-Down and Bottom-Up Parsing")
 
 while True:
 
@@ -62,3 +79,5 @@ while True:
 
     if sentence.strip():
         generate_parse_tree(sentence)
+    else:
+        print("Please enter a valid sentence.")
